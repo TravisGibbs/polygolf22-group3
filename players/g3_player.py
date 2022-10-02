@@ -28,7 +28,8 @@ POINT_SPACING = 1
 HIGH_SKILL_CONFIDENCE = 0.90
 LOW_SKILL_CONFIDENCE = 0.85
 SKILL_CONFIDENCE_THRESHHOLD = 50
-PUTTING_CONFIDENCE = 0.1
+MINIMUM_CONFIDENCE = 0.1
+PUTTING_CONFIDENCE = MINIMUM_CONFIDENCE
 
 """ Constants to adjust heuristic cost for scored points in A* search """
 FIXED_SANDTRAP_COST = 0.5                   # estimated additional shots required by entering sand trap
@@ -340,7 +341,7 @@ class Player(object):
                 continue
             if next_sp.actual_cost > 10:
                 continue
-            if next_sp.actual_cost > 0 and not self.splash_zone_within_map(next_sp.previous.point, next_p, conf):
+            if next_sp.actual_cost > 0 and not self.splash_zone_within_map(next_sp.previous.point, next_p, conf) and next_p != goal_point:
                 if next_p in best_cost:
                     del best_cost[next_p]
                 continue
@@ -432,7 +433,8 @@ class Player(object):
         print(f"===== SHOT NUMBER {score} =====")
         
         while target_point is None:
-            if confidence <= 0.0:
+            if confidence <= MINIMUM_CONFIDENCE:
+                print('No possible routes found.')
                 return None
 
             target_point = self.next_target(cl, target, confidence)
