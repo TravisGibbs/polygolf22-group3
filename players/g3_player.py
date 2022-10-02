@@ -33,8 +33,8 @@ PUTTING_CONFIDENCE = 0.1
 """ Constants to adjust heuristic cost for scored points in A* search """
 FIXED_SANDTRAP_COST = 0.5                   # estimated additional shots required by entering sand trap
 REMAINING_SHOTS_WEIGHT = 2                  # weight of estimated number of remaining shots from point (higher avoid points far from goal)
-SAND_TRAP_WEIGHT = 0.5                        # weight of point being in a sand trap (high avoids entering sand traps)
-REACHABLE_POINTS_WEIGHT = 0.01                 # weight of nearby sand vs. grass (high avoids areas with lots of nearby grass)
+SAND_TRAP_WEIGHT = 0.5                      # weight of point being in a sand trap (high avoids entering sand traps)
+REACHABLE_POINTS_WEIGHT = 0.01              # weight of nearby sand vs. grass (high avoids areas with lots of nearby grass)
 SAND_TRAP_IN_SPLASH_ZONE_WEIGHT = 3         # weight of target splash zone containing sand traps (high avoids splash zones containing sand traps)
 
 """ Constants to adjust backup logic that handles rolling """
@@ -110,7 +110,7 @@ class Player(object):
                 self.shapely_map, self.shapely_sand_traps, self.all_sandtraps, self.centroids_dict = pickle.load(f)
         else:
             # If the map has not been precomputed, do so
-            self.shapely_map = shapely.geometry.Polygon(golf_map.vertices)
+            self.shapely_map = shapely.geometry.Polygon(golf_map.vertices).buffer(0) # buffer(0) is a coarse approach to fix invalid map polygons
             self.shapely_sand_traps = [shapely.geometry.Polygon(st.vertices) for st in sand_traps]
             self.all_sandtraps = shapely.ops.unary_union(self.shapely_sand_traps)
             self.centroids_dict = self.split_polygon(50)
