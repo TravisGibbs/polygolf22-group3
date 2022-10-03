@@ -449,6 +449,16 @@ class Player(object):
         original_dist = np.linalg.norm(np.array(target_point) - current_point)
         v = np.array(target_point) - current_point # Vector from current to target
         u = v / original_dist # Unit vector pointing from current to target
+        
+        original_target_is_goal = tuple(target_point) == self.goal
+        pct_splash_zone_in_map = self.pct_splash_zone_within_map(tuple(current_point), tuple(target_point), confidence)
+
+        # If our last shot is going to be very risky, take half the originally planned shot instead
+        if original_target_is_goal and pct_splash_zone_in_map < 0.2:
+            original_dist = original_dist * 0.5
+            target_point = current_point + u * original_dist
+            original_target = tuple(target_point)
+
 
         print(f"Current location: {round(cl[0], 2)}, {round(cl[1], 2)}")
         print(F"Target point: {round(original_target[0], 2)}, {round(original_target[1], 2)}")
@@ -457,20 +467,20 @@ class Player(object):
         if original_dist >= 20.0:
             max_roll = (original_dist / 1.1) * 0.1
             # If target is goal, try to overshoot by 1 meter to roll into the hole
-            max_offset = max_roll if tuple(target_point) != self.goal else (max_roll - METERS_TO_OVERSHOOT_HOLE)
+            max_offset = max_roll if not original_target_is_goal else (max_roll - METERS_TO_OVERSHOOT_HOLE)
             offset = 0
             dist = original_dist
             
             # If target point is in a sand trap, try backing up, up to X% more, to avoid
-            original_target_in_st = self.is_point_in_sand(target_point)
+            original_target_in_st = self.is_point_in_sand(original_target)
             if original_target_in_st:
                 print('Target point is in a sand trap')
                 max_offset = max_offset * (1 + EXTRA_BACKUP_PCT_TO_AVOID_SAND_TRAPS)
-            
+
             # Keep track of if we have backed into or started in grass so we don't go too far and hit sand
             hit_grass = not original_target_in_st
 
-            while offset <= max_offset and self.pct_splash_zone_within_map(tuple(current_point), tuple(target_point), confidence) > PCT_SPLASH_ZONE_IN_MAP_TO_BACK_UP:
+            while offset <= max_offset and pct_splash_zone_in_map > (PCT_SPLASH_ZONE_IN_MAP_TO_BACK_UP if not original_target_is_goal else 0):
                 offset += BACKUP_INCREMENT
                 dist = original_dist - min(offset, max_offset)
                 new_target_point = current_point + u * dist
